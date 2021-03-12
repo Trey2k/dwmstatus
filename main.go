@@ -12,7 +12,11 @@ import (
 	"github.com/go-vgo/robotgo"
 	"github.com/itchyny/volume-go"
 	"github.com/jasonlvhit/gocron"
+	hook "github.com/robotn/gohook"
 )
+
+const maxY = 20
+const minY = 0
 
 func main() {
 	go clickEvent()
@@ -28,10 +32,11 @@ func updateStatus() {
 	bat := getBat()
 	wifi := getWifi()
 	volume := getVolume()
+	seperator := " ┃ "
 
-	buffer := "    "
+	statusStr := seperator + volume + seperator + wifi + seperator + bat + seperator + date + seperator
 
-	err := exec.Command("xsetroot", "-name", buffer+volume+" "+wifi+" "+bat+" "+date+buffer).Run()
+	err := exec.Command("xsetroot", "-name", statusStr).Run()
 	if err != nil {
 		log.Fatalf("get xsetroot -name failed: %+v", err)
 	}
@@ -39,20 +44,38 @@ func updateStatus() {
 }
 
 func clickEvent() {
-	for true {
-		mleft := robotgo.AddEvent("mleft")
-		if mleft {
-			x, y := robotgo.GetMousePos()
-			if y <= 20 && y >= 0 && x <= 1920 && x >= 1450 {
-				if x <= 1589 && x >= 1553 {
-					spawn("wicd-curses")
-				} else if x <= 1539 && x >= 1493 {
-					spawn("pulsemixer")
-				} else {
-					fmt.Println("You clicked the menu at ", fmt.Sprintf("X: %d, Y: %d", x, y))
-				}
-			}
+	EvChan := hook.Start()
+	defer hook.End()
 
+	for ev := range EvChan {
+
+		if ev.Kind == hook.MouseDown && ev.Button == hook.MouseMap["left"] {
+			x, y := robotgo.GetMousePos()
+			if y <= maxY && y >= minY {
+				if x <= 1564 && x >= 1521 {
+					spawn("wicd-curses")
+				} else if x <= 1461 && x >= 1429 {
+					spawn("pulsemixer")
+				} else if x <= 1423 && x >= 1403 {
+					muted, _ := volume.GetMuted()
+
+					if muted {
+						volume.Unmute()
+					} else {
+						volume.Mute()
+					}
+
+					updateStatus()
+				} else if x <= 1483 && x >= 1466 {
+					volume.IncreaseVolume(10)
+					updateStatus()
+				} else if x <= 1508 && x >= 1487 {
+					volume.IncreaseVolume(-10)
+					updateStatus()
+				}
+				fmt.Println("You clicked the menu at ", fmt.Sprintf("X: %d, Y: %d", x, y))
+
+			}
 		}
 	}
 }
@@ -78,21 +101,21 @@ func getVolume() string {
 	if err != nil {
 		log.Fatalf("get volume failed: %+v", err)
 	}
-	buffer := ""
+	buffer := " "
 	if vol < 10 {
-		buffer = "  "
+		buffer = "   "
 	} else if vol < 100 {
-		buffer = " "
+		buffer = "  "
 	}
 
 	if muted {
-		return fmt.Sprintf("🔇 %d%%", vol) + buffer
+		return fmt.Sprintf("🔇 %d%%%s🔺 🔻", vol, buffer)
 	} else if vol < 30 {
-		return fmt.Sprintf("🔈 %d%%", vol) + buffer
+		return fmt.Sprintf("🔈 %d%%%s🔺 🔻", vol, buffer)
 	} else if vol > 30 && vol < 60 {
-		return fmt.Sprintf("🔉 %d%%", vol) + buffer
+		return fmt.Sprintf("🔉 %d%%%s🔺 🔻", vol, buffer)
 	} else {
-		return fmt.Sprintf("🔊 %d%%", vol) + buffer
+		return fmt.Sprintf("🔊 %d%%%s🔺 🔻", vol, buffer)
 	}
 }
 
@@ -130,10 +153,9 @@ func getWifi() string {
 		log.Fatalf("get wifi status failed: %+v", err)
 	}
 
-	switch content[0] {
-	case '1':
+	if content[0] == '1' {
 		return "📶 🟢"
-	default:
+	} else {
 		return "📶 🔴"
 	}
 
