@@ -52,11 +52,11 @@ func clickEvent() {
 		if ev.Kind == hook.MouseDown && ev.Button == hook.MouseMap["left"] {
 			x, y := robotgo.GetMousePos()
 			if y <= maxY && y >= minY {
-				if x <= 1564 && x >= 1521 {
+				if x <= 1564 && x >= 1521 { // wifi button
 					spawn("wicd-curses")
-				} else if x <= 1461 && x >= 1429 {
+				} else if x <= 1461 && x >= 1429 { // audio button
 					spawn("pulsemixer")
-				} else if x <= 1423 && x >= 1403 {
+				} else if x <= 1423 && x >= 1403 { // mute toggle
 					muted, _ := volume.GetMuted()
 
 					if muted {
@@ -66,10 +66,10 @@ func clickEvent() {
 					}
 
 					updateStatus()
-				} else if x <= 1483 && x >= 1466 {
+				} else if x <= 1483 && x >= 1466 { // volume up
 					volume.IncreaseVolume(10)
 					updateStatus()
-				} else if x <= 1508 && x >= 1487 {
+				} else if x <= 1508 && x >= 1487 { // volume down
 					volume.IncreaseVolume(-10)
 					updateStatus()
 				}
