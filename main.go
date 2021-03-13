@@ -87,10 +87,6 @@ func spawn(cmd string) {
 	}
 }
 
-func respToString(str []byte) string {
-	return strings.Replace(string(str), string(rune(10)), "", -1)
-}
-
 func getVolume() string {
 	vol, err := volume.GetVolume()
 	if err != nil {
@@ -130,7 +126,7 @@ func getBat() string {
 		log.Fatalf("get batery percentage failed: %+v", err)
 	}
 
-	levelStr := respToString(content)
+	levelStr := strings.Replace(string(content), "\n", "", -1)
 
 	level, err := strconv.Atoi(levelStr)
 	if err != nil {
