@@ -15,17 +15,21 @@ import (
 	hook "github.com/robotn/gohook"
 )
 
+// min and max values for the Y of menu
 const maxY = 20
 const minY = 0
 
 func main() {
-	go clickEvent()
-
+	updateStatus() // updateStatus at startup so menu appears right awway
+	go clickEvent() // running clickEvent in go routine
+	
+	// creating cron to run updateStatus every secound on the secound
 	s := gocron.NewScheduler()
 	s.Every(1).Seconds().Do(updateStatus)
 	<-s.Start()
 }
 
+// updateStatus() will update the status bar
 func updateStatus() {
 
 	date := getDate()
@@ -43,6 +47,7 @@ func updateStatus() {
 
 }
 
+// clickEvent() Always checks for clicks in the menu and handles them
 func clickEvent() {
 	EvChan := hook.Start()
 	defer hook.End()
@@ -73,13 +78,13 @@ func clickEvent() {
 					volume.IncreaseVolume(-10)
 					updateStatus()
 				}
-				fmt.Println("You clicked the menu at ", fmt.Sprintf("X: %d, Y: %d", x, y))
-
+				//fmt.Println("You clicked the menu at ", fmt.Sprintf("X: %d, Y: %d", x, y))
 			}
 		}
 	}
 }
 
+// spawn(cmd string) Spawn an Alacritty terminal abd rub the given command
 func spawn(cmd string) {
 	err := exec.Command("alacritty", "--command", cmd).Start()
 	if err != nil {
@@ -87,6 +92,7 @@ func spawn(cmd string) {
 	}
 }
 
+// getVolume() return the volume in percntage with emojis for buttons
 func getVolume() string {
 	vol, err := volume.GetVolume()
 	if err != nil {
@@ -97,13 +103,15 @@ func getVolume() string {
 	if err != nil {
 		log.Fatalf("get volume failed: %+v", err)
 	}
+	// buffer so always takes up same amount of space only works with mnospace fonts
 	buffer := " "
 	if vol < 10 {
 		buffer = "   "
 	} else if vol < 100 {
 		buffer = "  "
 	}
-
+	
+	// Update icon for colume levels and muted
 	if muted {
 		return fmt.Sprintf("🔇 %d%%%s🔺 🔻", vol, buffer)
 	} else if vol < 30 {
@@ -115,11 +123,13 @@ func getVolume() string {
 	}
 }
 
+// getDate() returns a formatted date string with emoji
 func getDate() string {
 
 	return "📅 " + time.Now().Format("(Mon) 01/02/06 03:04:05 PM")
 }
 
+// getBat() returns the current battery percentage with emojis
 func getBat() string {
 	content, err := ioutil.ReadFile("/sys/class/power_supply/BAT0/capacity")
 	if err != nil {
@@ -132,7 +142,8 @@ func getBat() string {
 	if err != nil {
 		log.Fatalf("get batery percentage failed: %+v", err)
 	}
-
+	
+	// buffer so always takes up same amount of space, only works with monospace fonts
 	buffer := ""
 	if level < 10 {
 		buffer = "  "
@@ -143,6 +154,7 @@ func getBat() string {
 	return "🔋 " + levelStr + "%" + buffer
 }
 
+// getWifi() returns a red circle for no connection and green for connection
 func getWifi() string {
 	content, err := ioutil.ReadFile("/sys/class/net/wlan0/carrier")
 	if err != nil {
