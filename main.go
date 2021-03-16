@@ -20,9 +20,9 @@ const maxY = 20
 const minY = 0
 
 func main() {
-	updateStatus() // updateStatus at startup so menu appears right awway
+	updateStatus()  // updateStatus at startup so menu appears right awway
 	go clickEvent() // running clickEvent in go routine
-	
+
 	// creating cron to run updateStatus every secound on the secound
 	s := gocron.NewScheduler()
 	s.Every(1).Seconds().Do(updateStatus)
@@ -86,22 +86,19 @@ func clickEvent() {
 
 // spawn(cmd string) Spawn an Alacritty terminal abd rub the given command
 func spawn(cmd string) {
-	err := exec.Command("alacritty", "--command", cmd).Start()
-	if err != nil {
-		log.Fatalf("launching %s failed: %+v", cmd, err)
-	}
+	exec.Command("alacritty", "--command", cmd).Start()
 }
 
 // getVolume() return the volume in percntage with emojis for buttons
 func getVolume() string {
 	vol, err := volume.GetVolume()
 	if err != nil {
-		log.Fatalf("get volume failed: %+v", err)
+		return err.Error()
 	}
 
 	muted, err := volume.GetMuted()
 	if err != nil {
-		log.Fatalf("get volume failed: %+v", err)
+		return err.Error()
 	}
 	// buffer so always takes up same amount of space only works with mnospace fonts
 	buffer := " "
@@ -110,7 +107,7 @@ func getVolume() string {
 	} else if vol < 100 {
 		buffer = "  "
 	}
-	
+
 	// Update icon for colume levels and muted
 	if muted {
 		return fmt.Sprintf("🔇 %d%%%s🔺 🔻", vol, buffer)
@@ -133,16 +130,16 @@ func getDate() string {
 func getBat() string {
 	content, err := ioutil.ReadFile("/sys/class/power_supply/BAT0/capacity")
 	if err != nil {
-		log.Fatalf("get batery percentage failed: %+v", err)
+		return err.Error()
 	}
 
 	levelStr := strings.Replace(string(content), "\n", "", -1)
 
 	level, err := strconv.Atoi(levelStr)
 	if err != nil {
-		log.Fatalf("get batery percentage failed: %+v", err)
+		return err.Error()
 	}
-	
+
 	// buffer so always takes up same amount of space, only works with monospace fonts
 	buffer := ""
 	if level < 10 {
@@ -158,7 +155,7 @@ func getBat() string {
 func getWifi() string {
 	content, err := ioutil.ReadFile("/sys/class/net/wlan0/carrier")
 	if err != nil {
-		log.Fatalf("get wifi status failed: %+v", err)
+		return err.Error()
 	}
 
 	if content[0] == '1' {
